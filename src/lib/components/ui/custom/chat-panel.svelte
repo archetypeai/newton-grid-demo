@@ -6,6 +6,7 @@
 	import MessageSquareIcon from '@lucide/svelte/icons/message-square';
 	import SendIcon from '@lucide/svelte/icons/send';
 	import SpinnerIcon from '@lucide/svelte/icons/loader';
+	import Trash2Icon from '@lucide/svelte/icons/trash-2';
 	import SunIcon from '@lucide/svelte/icons/sun';
 	import BatteryIcon from '@lucide/svelte/icons/battery-charging';
 	import BarChartIcon from '@lucide/svelte/icons/bar-chart-3';
@@ -71,6 +72,31 @@
 	class={cn('flex max-h-full flex-col gap-3 overflow-hidden', className)}
 	{...restProps}
 >
+	{#if messages.length > 0}
+		<div class="flex items-center justify-between">
+			<div class="flex flex-wrap gap-1.5">
+				{#each QUICK_PROMPTS as prompt}
+					<Button
+						variant="outline"
+						size="sm"
+						disabled={loading}
+						onclick={() => onsend?.(prompt.query)}
+					>
+						<prompt.icon class="size-3" aria-hidden="true" />
+						{prompt.label}
+					</Button>
+				{/each}
+			</div>
+			<Button
+				variant="ghost"
+				size="icon-sm"
+				aria-label="Clear chat"
+				onclick={() => (messages = [])}
+			>
+				<Trash2Icon class="size-3.5" />
+			</Button>
+		</div>
+	{/if}
 	<ScrollArea class="min-h-0 flex-1">
 		<div class="flex flex-col gap-3 pr-3">
 			{#if messages.length === 0}
