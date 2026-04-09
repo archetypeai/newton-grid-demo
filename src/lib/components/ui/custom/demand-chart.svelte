@@ -66,11 +66,12 @@
 </script>
 
 <BackgroundCard
-	title="Demand"
+	title="California Demand"
 	icon={TrendingUpIcon}
 	class={cn('flex max-h-full flex-col gap-3 overflow-hidden', className)}
 	{...restProps}
 >
+	<p class="text-muted-foreground text-[10px]">Source: CAISO Today's Outlook · 5-min intervals · Pacific Time</p>
 	<div class="flex items-center gap-1">
 		<div class="flex gap-4">
 			{#each SERIES as s}

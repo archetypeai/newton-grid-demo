@@ -39,25 +39,32 @@
 	let plotW = $derived(W - PAD.left - PAD.right);
 	let plotH = $derived(H - PAD.top - PAD.bottom);
 
-	// Compute stacked areas
+	// Compute stacked areas — positive sources stack up, negative stack down from zero
 	let stackedData = $derived.by(() => {
 		if (!supply.length) return [];
 		return supply.map((row, i) => {
-			let y0 = 0;
+			let posY = 0;
+			let negY = 0;
 			const layers = [];
 			for (const src of SOURCES) {
-				const val = Math.max(0, row[src.key] ?? 0);
-				layers.push({ key: src.key, color: src.color, y0, y1: y0 + val });
-				y0 += val;
+				const val = row[src.key] ?? 0;
+				if (val >= 0) {
+					layers.push({ key: src.key, color: src.color, y0: posY, y1: posY + val });
+					posY += val;
+				} else {
+					layers.push({ key: src.key, color: src.color, y0: negY + val, y1: negY });
+					negY += val;
+				}
 			}
-			return { index: i, time: row.Time, total: y0, layers };
+			return { index: i, time: row.Time, posTotal: posY, negTotal: negY, layers };
 		});
 	});
 
-	let yMax = $derived(Math.max(1, ...stackedData.map((d) => d.total)) * 1.05);
+	let yMax = $derived(Math.max(1, ...stackedData.map((d) => d.posTotal)) * 1.05);
+	let yMin = $derived(Math.min(0, ...stackedData.map((d) => d.negTotal)) * 1.05);
 
 	function x(i) { return PAD.left + (i / Math.max(1, supply.length - 1)) * plotW; }
-	function y(val) { return PAD.top + plotH - (val / yMax) * plotH; }
+	function y(val) { return PAD.top + plotH - ((val - yMin) / (yMax - yMin || 1)) * plotH; }
 
 	// Build SVG area paths per source
 	let areaPaths = $derived.by(() => {
@@ -72,9 +79,11 @@
 	});
 
 	let yTicks = $derived.by(() => {
-		const step = yMax > 40000 ? 10000 : yMax > 20000 ? 5000 : 2000;
+		const range = yMax - yMin;
+		const step = range > 40000 ? 10000 : range > 20000 ? 5000 : 2000;
 		const ticks = [];
-		for (let v = 0; v <= yMax; v += step) ticks.push(v);
+		const start = Math.floor(yMin / step) * step;
+		for (let v = start; v <= yMax; v += step) ticks.push(v);
 		return ticks;
 	});
 
@@ -90,11 +99,12 @@
 </script>
 
 <BackgroundCard
-	title="Supply Mix"
+	title="California Supply Mix"
 	icon={ZapIcon}
 	class={cn('flex max-h-full flex-col gap-3 overflow-hidden', className)}
 	{...restProps}
 >
+	<p class="text-muted-foreground text-[10px]">Source: CAISO Today's Outlook · 5-min intervals · Pacific Time</p>
 	<div class="flex items-center gap-1">
 		<div class="flex flex-wrap gap-x-3 gap-y-1">
 			{#each SOURCES.slice(0, 7) as src}
@@ -125,6 +135,12 @@
 						{(tick / 1000).toFixed(0)}k
 					</text>
 				{/each}
+
+				<!-- Zero line -->
+				{#if yMin < 0}
+					<line x1={PAD.left} y1={y(0)} x2={W - PAD.right} y2={y(0)} stroke="var(--color-muted-foreground)" stroke-width="1" opacity="0.5" stroke-dasharray="4,3" />
+					<text x={PAD.left - 6} y={y(0) + 3} text-anchor="end" fill="var(--color-muted-foreground)" font-size="9" font-family="var(--font-mono)" font-weight="bold">0</text>
+				{/if}
 
 				<!-- Stacked areas -->
 				{#each areaPaths as area}
