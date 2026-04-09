@@ -1,6 +1,7 @@
 <script>
 	import Menubar from '$lib/components/ui/patterns/menubar/index.js';
 	import { Button } from '$lib/components/ui/primitives/button/index.js';
+	import RefreshCwIcon from '@lucide/svelte/icons/refresh-cw';
 	import SupplyChart from '$lib/components/ui/custom/supply-chart.svelte';
 	import DemandChart from '$lib/components/ui/custom/demand-chart.svelte';
 	import StatsBar from '$lib/components/ui/custom/stats-bar.svelte';
@@ -15,6 +16,13 @@
 	let chatLoading = $state(false);
 	let expanded = $state(null);
 	let intervalId = $state(null);
+	let countdown = $state(300);
+
+	function formatCountdown(secs) {
+		const m = Math.floor(secs / 60);
+		const s = secs % 60;
+		return `${m}:${String(s).padStart(2, '0')}`;
+	}
 
 	async function loadData() {
 		try {
@@ -64,11 +72,18 @@
 		expanded = expanded === panel ? null : panel;
 	}
 
-	// Load data on mount and refresh every 5 minutes
+	// Load data on mount and refresh every 5 minutes with countdown
 	$effect(() => {
 		loadData();
-		intervalId = setInterval(loadData, 5 * 60 * 1000);
-		return () => { if (intervalId) clearInterval(intervalId); };
+		countdown = 300;
+		const id = setInterval(() => {
+			countdown--;
+			if (countdown <= 0) {
+				loadData();
+				countdown = 300;
+			}
+		}, 1000);
+		return () => clearInterval(id);
 	});
 </script>
 
@@ -80,7 +95,13 @@
 	class="bg-background text-foreground grid h-screen w-screen grid-rows-[auto_1fr] overflow-hidden"
 >
 	<Menubar partnerLogo={partnerSnippet}>
-		<StatsBar {stats} />
+		<div class="flex items-center gap-4">
+			<StatsBar {stats} />
+			<div class="text-muted-foreground flex items-center gap-1.5 text-xs">
+				<RefreshCwIcon class="size-3" aria-hidden="true" />
+				<span>Next update in <span class="text-foreground font-mono">{formatCountdown(countdown)}</span></span>
+			</div>
+		</div>
 	</Menubar>
 
 	<main class="grid grid-cols-2 grid-rows-2 gap-4 overflow-hidden p-4">
