@@ -98,7 +98,7 @@
 				{#each yTicks as tick}
 					<line x1={PAD.left} y1={yScale(tick)} x2={W - PAD.right} y2={yScale(tick)} stroke="var(--color-border)" stroke-width="0.5" />
 					<text x={PAD.left - 6} y={yScale(tick) + 3} text-anchor="end" fill="var(--color-muted-foreground)" font-size="9" font-family="var(--font-mono)">
-						{(tick / 1000).toFixed(0)}k
+						{(tick / 1000).toFixed(0)}k MW
 					</text>
 				{/each}
 
